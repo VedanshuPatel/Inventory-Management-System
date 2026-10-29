@@ -1,8 +1,6 @@
 import os
 import sqlite3
 from pathlib import Path
-from __future__ import annotations
-
 
 DEFAULT_DB_PATH = Path(__file__).resolve().with_name("inventory.db")
 SCHEMA_PATH = Path(__file__).resolve().with_name("schema.sql")
