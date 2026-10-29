@@ -1,7 +1,10 @@
 from contextlib import closing
+
 import pytest
+
 from inventory_db import connect, init_db
 from seed_db import load_seed
+
 
 @pytest.fixture
 def conn():

@@ -1,5 +1,6 @@
 from inventory_db import init_db
 
+
 def test_supplier_index_exists(conn):
     row = conn.execute(
         """
