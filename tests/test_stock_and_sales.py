@@ -1,6 +1,13 @@
 import pytest
 
-from inventory_db import (DuplicateProductInSaleError,InsufficientStockError,InvalidAmountError,UnknownProductError,adjust_stock,record_sale,restock,)
+from inventory_db import (
+    InsufficientStockError,
+    InvalidAmountError,
+    UnknownProductError,
+    adjust_stock,
+    record_sale,
+    restock,
+)
 
 
 def _counts(conn):

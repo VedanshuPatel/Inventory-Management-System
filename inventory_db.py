@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from datetime import UTC, datetime
 from pathlib import Path
 
 DEFAULT_DB_PATH = Path(__file__).resolve().with_name("inventory.db")
@@ -27,6 +28,21 @@ class InventoryError(Exception):
 
 class ProductHasSalesError(InventoryError):
     """Raised when deleting a product that appears in sale_items."""
+
+class InvalidAmountError(InventoryError):
+    """Raised when an amount is zero or otherwise invalid"""
+
+
+class UnknownProductError(InventoryError):
+    """Raised when a product id does not exist"""
+
+
+class InsufficientStockError(InventoryError):
+    """Raised when stock would go below zero"""
+
+
+class DuplicateProductInSaleError(InventoryError):
+    """Raised when the same product appears twice in one sale"""
 
 
 def add_product(conn,sku,name,category,supplier_id,unit_price_cents,quantity_on_hand=0,reorder_level=0):
@@ -151,3 +167,88 @@ def report_sales_by_product(conn):
     ).fetchall()
 
 
+def _default_timestamp():
+    """Return the current time in UTC with microseconds removed"""
+    return datetime.now(UTC).replace(microsecond=0).isoformat()
+
+
+def adjust_stock(conn, product_id, delta, occurred_at=None):
+    """Change stock by a signed amount and log an adjustment movement"""
+    if delta == 0:
+        raise InvalidAmountError("adjustment delta cannot be zero")
+    if occurred_at is None:
+        occurred_at = _default_timestamp()
+
+    with conn:
+        row = conn.execute("SELECT quantity_on_hand FROM products WHERE id = ?",(product_id,),).fetchone()
+        if row is None:
+            raise UnknownProductError("product not found")
+        if row["quantity_on_hand"] + delta < 0:
+            raise InsufficientStockError("adjustment would make stock negative")
+
+        conn.execute("""UPDATE products SET quantity_on_hand = quantity_on_hand + ? WHERE id = ?""",
+            (delta, product_id),)
+        conn.execute(
+            """
+            INSERT INTO stock_movements (product_id, delta, reason, occurred_at)
+            VALUES (?, ?, 'adjustment', ?)
+            """,
+            (product_id, delta, occurred_at),)
+
+
+def record_sale(conn, items, sold_at=None):
+    """Record a sale with line items with all-or-nothing inside one transaction"""
+    if not items:
+        raise InvalidAmountError("sale must include at least one item")
+
+    product_ids = [product_id for product_id, _qty in items]
+    if len(product_ids) != len(set(product_ids)):
+        raise DuplicateProductInSaleError("same product listed twice in one sale")
+
+    if sold_at is None:
+        sold_at = _default_timestamp()
+    with conn:
+        cur = conn.execute("INSERT INTO sales (sold_at) VALUES (?)",(sold_at,),)
+        sale_id = cur.lastrowid
+        for product_id, qty in items:
+            if qty <= 0:
+                raise InvalidAmountError("sale quantity must be positive")
+
+            product = conn.execute(
+                """
+                SELECT unit_price_cents, quantity_on_hand FROM products WHERE id = ?
+                """,
+                (product_id,),
+            ).fetchone()
+            if product is None:
+                raise UnknownProductError("product not found")
+            if qty > product["quantity_on_hand"]:
+                raise InsufficientStockError("not enough stock for sale")
+
+            conn.execute("""INSERT INTO sale_items (sale_id, product_id, quantity, unit_price_cents) VALUES (?, ?, ?, ?)""",
+                (sale_id, product_id, qty, product["unit_price_cents"]),)
+            conn.execute("""UPDATE products SET quantity_on_hand = quantity_on_hand - ? WHERE id = ?""",
+                (qty, product_id),)
+            conn.execute("""INSERT INTO stock_movements (product_id, delta, reason, occurred_at) VALUES (?, ?, 'sale', ?)""",
+                (product_id, -qty, sold_at),)
+
+        return sale_id
+
+def restock(conn, product_id, amount, occurred_at=None):
+    """Increase stock by a positive amount and log a restock movement"""
+    if amount <= 0:
+        raise InvalidAmountError("restock amount must be positive")
+    if occurred_at is None:
+        occurred_at = _default_timestamp()
+
+    with conn:
+        cur = conn.execute("""UPDATE products SET quantity_on_hand = quantity_on_hand + ? WHERE id = ?""",
+            (amount, product_id),)
+        if cur.rowcount == 0:
+            raise UnknownProductError("product not found")
+        conn.execute(
+            """
+            INSERT INTO stock_movements (product_id, delta, reason, occurred_at)
+            VALUES (?, ?, 'restock', ?)
+            """,
+            (product_id, amount, occurred_at),)
