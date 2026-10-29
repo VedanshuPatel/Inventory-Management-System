@@ -85,6 +85,7 @@ def delete_product(conn, product_id):
         conn.execute("DELETE FROM products WHERE id = ?", (product_id,))
 
 def search_products(conn,text,category=None,max_price_cents=None,in_stock_only=False,low_stock_only=False,):
+    """Find products by name, SKU, or supplier with optional filters sorted by name."""
     pattern = "%" + text + "%"
     sql = """
         SELECT p.*, s.name AS supplier_name FROM products p
@@ -104,3 +105,49 @@ def search_products(conn,text,category=None,max_price_cents=None,in_stock_only=F
         sql += " AND p.quantity_on_hand <= p.reorder_level"
     sql += " ORDER BY p.name"
     return conn.execute(sql, params).fetchall()
+
+
+
+def report_low_stock(conn):
+    """Products at or below reorder level with how many units short"""
+    return conn.execute(
+        """
+        SELECT sku, name, quantity_on_hand, reorder_level, (reorder_level - quantity_on_hand) AS units_short
+        FROM products WHERE quantity_on_hand <= reorder_level
+        ORDER BY name
+        """
+    ).fetchall()
+
+def report_never_sold(conn):
+    """Products that do not appear in any sale"""
+    return conn.execute(
+        """
+        SELECT sku, name FROM products p
+        WHERE NOT EXISTS (SELECT 1 FROM sale_items si WHERE si.product_id = p.id)
+        ORDER BY name
+        """
+    ).fetchall()
+
+def report_stock_value_by_supplier(conn):
+    """Supplier name and total stock value in cents with highest first"""
+    return conn.execute(
+        """
+        SELECT s.name, SUM(p.unit_price_cents * p.quantity_on_hand) AS total_cents
+        FROM products p JOIN suppliers s ON s.id = p.supplier_id
+        GROUP BY s.id, s.name
+        ORDER BY total_cents DESC
+        """
+    ).fetchall()
+
+def report_sales_by_product(conn):
+    """Units sold and revenue in cents per product with highest revenue first"""
+    return conn.execute(
+        """
+        SELECT p.name, p.sku, SUM(si.quantity) AS units_sold, SUM(si.quantity * si.unit_price_cents) AS revenue_cents
+        FROM sale_items si JOIN products p ON p.id = si.product_id
+        GROUP BY p.id, p.name, p.sku
+        ORDER BY revenue_cents DESC, p.name
+        """
+    ).fetchall()
+
+

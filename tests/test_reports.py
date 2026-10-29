@@ -1,4 +1,9 @@
-from inventory_db import (report_low_stock,report_never_sold,report_sales_by_product,report_stock_value_by_supplier,)
+from inventory_db import (
+    report_low_stock,
+    report_never_sold,
+    report_sales_by_product,
+    report_stock_value_by_supplier,
+)
 
 
 def test_report_never_sold(seeded_conn):
