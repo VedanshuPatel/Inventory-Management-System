@@ -16,5 +16,6 @@ def conn():
 @pytest.fixture
 def seeded_conn(conn):
     """Same as conn, with sample data loaded."""
-    load_seed(conn)
+    with conn:
+        load_seed(conn)
     return conn
