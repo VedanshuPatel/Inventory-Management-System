@@ -83,3 +83,24 @@ def delete_product(conn, product_id):
                 "Product cannot be deleted because it has sales history."
             )
         conn.execute("DELETE FROM products WHERE id = ?", (product_id,))
+
+def search_products(conn,text,category=None,max_price_cents=None,in_stock_only=False,low_stock_only=False,):
+    pattern = "%" + text + "%"
+    sql = """
+        SELECT p.*, s.name AS supplier_name FROM products p
+        JOIN suppliers s ON s.id = p.supplier_id
+        WHERE (LOWER(p.name) LIKE LOWER(?) OR LOWER(p.sku) LIKE LOWER(?) OR LOWER(s.name) LIKE LOWER(?))
+    """
+    params = [pattern, pattern, pattern]
+    if category is not None:
+        sql += " AND p.category = ?"
+        params.append(category)
+    if max_price_cents is not None:
+        sql += " AND p.unit_price_cents <= ?"
+        params.append(max_price_cents)
+    if in_stock_only:
+        sql += " AND p.quantity_on_hand > 0"
+    if low_stock_only:
+        sql += " AND p.quantity_on_hand <= p.reorder_level"
+    sql += " ORDER BY p.name"
+    return conn.execute(sql, params).fetchall()

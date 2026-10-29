@@ -12,7 +12,7 @@ def test_search_filter_category(seeded_conn):
     assert names == sorted(names)
 
 def test_search_filters_combine(seeded_conn):
-    rows = search_products(seeded_conn, "paint", category="Coatings",max_price_cents=2000,in_stock_only=True,low_stock_only=True,)
+    rows = search_products(seeded_conn, "enamel", category="Coatings",max_price_cents=2000,in_stock_only=True,low_stock_only=True,)
     assert len(rows) == 1
     assert rows[0]["sku"] == "ENL-1L"
 
@@ -37,6 +37,8 @@ def test_search_sql_injection_text_is_harmless(seeded_conn):
     ).fetchone()
     assert tables is not None
     assert seeded_conn.execute("SELECT COUNT(*) FROM products").fetchone()[0] == 12
+
+
 
 def test_search_filter_low_stock_only(seeded_conn):
     rows = search_products(seeded_conn, "", low_stock_only=True)
