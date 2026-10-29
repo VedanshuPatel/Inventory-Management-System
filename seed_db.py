@@ -78,12 +78,14 @@ def load_seed(conn):
 
 
 def print_row_counts(conn):
+    """Print the number rows in each table"""
     for table in ("suppliers", "products", "sales", "sale_items", "stock_movements"):
         count = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
         print(f"{table}: {count}")
 
 
 def main():
+    """Create tables, load sample data, and prints row count"""
     with closing(connect()) as conn:
         init_db(conn)
         with conn:
