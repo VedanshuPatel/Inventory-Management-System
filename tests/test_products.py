@@ -11,6 +11,8 @@ from inventory_db import (
     get_product,
     update_price,
 )
+
+
 def _insert_supplier(conn, name="Test Supplier"):
     cur = conn.execute("INSERT INTO suppliers (name) VALUES (?)", (name,))
     return cur.lastrowid
