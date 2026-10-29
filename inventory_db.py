@@ -2,6 +2,7 @@ import os
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
+from contextlib import closing
 
 DEFAULT_DB_PATH = Path(__file__).resolve().with_name("inventory.db")
 SCHEMA_PATH = Path(__file__).resolve().with_name("schema.sql")
@@ -252,3 +253,13 @@ def restock(conn, product_id, amount, occurred_at=None):
             VALUES (?, ?, 'restock', ?)
             """,
             (product_id, amount, occurred_at),)
+
+def format_cents(cents):
+    """Format integer cents as a dollars with two decimals"""
+    return f"{cents / 100:.2f}"
+
+
+def backup_db(conn, dest_path):
+    """Copy the database to dest_path using SQLite's backup"""
+    with closing(sqlite3.connect(str(dest_path))) as dest:
+        conn.backup(dest)
