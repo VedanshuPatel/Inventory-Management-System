@@ -1,8 +1,8 @@
 import os
 import sqlite3
+from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
-from contextlib import closing
 
 DEFAULT_DB_PATH = Path(__file__).resolve().with_name("inventory.db")
 SCHEMA_PATH = Path(__file__).resolve().with_name("schema.sql")

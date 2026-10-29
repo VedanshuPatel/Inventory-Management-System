@@ -1,4 +1,5 @@
 from contextlib import closing
+
 from inventory_db import backup_db, connect
 
 
