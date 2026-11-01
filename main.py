@@ -43,28 +43,12 @@ def _handle_choice(conn, choice):
     if choice == "0":
         print("Bye!")
         return False
-    if choice == "1":
-        _search(conn)
-    elif choice == "2":
-        _lookup(conn)
-    elif choice == "3":
-        _add(conn)
-    elif choice == "4":
-        _restock(conn)
-    elif choice == "5":
-        _sale(conn)
-    elif choice == "6":
-        _report_stock_value(conn)
-    elif choice == "7":
-        _report_low(conn)
-    elif choice == "8":
-        _report_sales(conn)
-    elif choice == "9":
-        _report_never(conn)
-    elif choice == "10":
-        _backup(conn)
-    else:
+        
+    action = MENU_ACTIONS.get(choice)
+    if action is None:
         print("Unknown option, please try again.")
+        return True
+    action(conn)
     return True
 
 def _ask_yes(prompt):
@@ -240,6 +224,19 @@ def _backup(conn):
     backup_db(conn, Path(path))
     print(f"Backup written to {path}.")
 
+
+MENU_ACTIONS = {
+    "1": _search,
+    "2": _lookup,
+    "3": _add,
+    "4": _restock,
+    "5": _sale,
+    "6": _report_stock_value,
+    "7": _report_low,
+    "8": _report_sales,
+    "9": _report_never,
+    "10": _backup,
+}
 
 def main():
     """Run the menu loop for the user"""
