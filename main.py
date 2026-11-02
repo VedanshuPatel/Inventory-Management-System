@@ -242,6 +242,10 @@ def main():
     """Run the menu loop for the user"""
     with closing(connect()) as conn:
         init_db(conn)
+        low_stock_output = report_low_stock(conn)
+        print(f"Low stock: {len(low_stock_output)} product(s) need your attention")
+        for row in low_stock_output:
+            print(f"            {row['sku']} — {row['name']}")
         flag = True
         while flag:
             _print_menu()
