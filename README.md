@@ -47,22 +47,10 @@ export INVENTORY_DB=./inventory.db
 ## Docker
 ```bash
 docker build -t inventory:1.0.0 .
-[+] Building 8.0s (10/10) FINISHED                                                                                                    docker:desktop-linux
- => [internal] load build definition from Dockerfile                                                                                              0.0s
- => => transferring dockerfile: 236B                                                                                                              0.0s
- => [internal] load metadata for docker.io/library/python:3.12.10-slim-bookworm                                                                   1.0s
- => [internal] load .dockerignore                                                                                                                 0.0s
- => => transferring context: 161B                                                                                                                 0.0s
- => [1/5] FROM docker.io/library/python:3.12.
- => [internal] load build context                                                                                                                 0.0s
- => => transferring context: 138.83kB                                                                                                             0.0s
- => [2/5] WORKDIR /app                                                                                                                            0.2s
- => [3/5] COPY requirements.txt .                                                                                                                 0.0s
- => [4/5] RUN pip install --no-cache-dir -r requirements.txt                                                                                      3.2s
- => [5/5] COPY . .                                                                                                                                0.0s
+[+] Building 8.0s (10/10) FINISHED                                                                                                    
 
- => => naming to docker.io/library/inventory:1.0.0                                                                                                0.0s
- => => unpacking to docker.io/library/inventory:1.0.0                                                                                             0.8s
+ => => naming to docker.io/library/inventory:1.0.0
+ => => unpacking to docker.io/library/inventory:1.0.0
 
 View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/
 ```
@@ -362,7 +350,7 @@ HEX-M8 — Hex Bolt M8x40 (box) (Cedar Valley Metals)
 
 Choose an option: 2
 Product id: 8
-SCR-PH2 — Phillips Screwdriver #2 (Ironbark Tools)
+SCR-PH2 — Phillips Screwdriver
   category: Hand Tools
   price: $7.99
   qty: 18 (reorder at 6)
@@ -421,7 +409,7 @@ HEX-M8 — Hex Bolt M8x40 (box) (Cedar Valley Metals)
 
 Choose an option: 2
 Product id: 8
-SCR-PH2 — Phillips Screwdriver #2 (Ironbark Tools)
+SCR-PH2 — Phillips Screwdriver
   category: Hand Tools
   price: $7.99
   qty: 18 (reorder at 6)
@@ -441,3 +429,244 @@ SCR-PH2 — Phillips Screwdriver #2 (Ironbark Tools)
 Choose an option: 0
 Bye!
 ```
+
+## Release 2 and Rollback
+```bash
+docker build -t inventory:1.1.0 .
+
+[+] Building 0.6s (10/10) FINISHED  
+
+ => => naming to docker.io/library/inventory:1.1.0
+ => => unpacking to docker.io/library/inventory:1.1.0   
+
+docker run --rm \
+  -e INVENTORY_DB=/data/inventory.db \
+  -v inventory-data:/data \
+  inventory:1.1.0 \
+  python seed_db.py
+
+suppliers: 4
+products: 12
+sales: 5
+sale_items: 12
+stock_movements: 0
+
+Inventory-Management-System % docker run -it --rm \
+  -e INVENTORY_DB=/data/inventory.db \
+  -v inventory-data:/data \
+  inventory:1.1.0
+Low stock: 3 product(s) need your attention
+            ENL-1L — Clear Enamel 1L
+            WAS-M8 — Flat Washer M8 (box)
+            EAR-N25 — Foam Ear Plugs N25
+
+1. Search products
+2. Look up a product
+3. Add a product
+4. Restock
+5. Record a sale
+6. Report: stock value by supplier
+7. Report: low stock
+8. Report: sales by product
+9. Report: never sold
+10. Back up database
+0. Exit
+
+Choose an option: 2
+Product id: 1
+HEX-M8 — Hex Bolt M8x40 (box) (Cedar Valley Metals)
+  category: Fasteners
+  price: $4.50
+  qty: 50 (reorder at 15)
+
+1. Search products
+2. Look up a product
+3. Add a product
+4. Restock
+5. Record a sale
+6. Report: stock value by supplier
+7. Report: low stock
+8. Report: sales by product
+9. Report: never sold
+10. Back up database
+0. Exit
+
+Choose an option: 0
+Bye!
+
+Inventory-Management-System % docker run -it --rm \
+  -e INVENTORY_DB=/data/inventory.db \
+  -v inventory-data:/data \
+  inventory:1.1.0
+Low stock: 3 product(s) need your attention
+  ENL-1L — Clear Enamel 1L
+  WAS-M8 — Flat Washer M8 (box)
+  EAR-N25 — Foam Ear Plugs N25
+
+1. Search products
+2. Look up a product
+3. Add a product
+4. Restock
+5. Record a sale
+6. Report: stock value by supplier
+7. Report: low stock
+8. Report: sales by product
+9. Report: never sold
+10. Back up database
+0. Exit
+
+Choose an option: 4
+Product id: 1
+Amount to add: 24
+Restocked.
+
+1. Search products
+2. Look up a product
+3. Add a product
+4. Restock
+5. Record a sale
+6. Report: stock value by supplier
+7. Report: low stock
+8. Report: sales by product
+9. Report: never sold
+10. Back up database
+0. Exit
+
+Choose an option: 2
+Product id: 1
+HEX-M8 — Hex Bolt M8x40 (box) (Cedar Valley Metals)
+  category: Fasteners
+  price: $4.50
+  qty: 74 (reorder at 15)
+
+1. Search products
+2. Look up a product
+3. Add a product
+4. Restock
+5. Record a sale
+6. Report: stock value by supplier
+7. Report: low stock
+8. Report: sales by product
+9. Report: never sold
+10. Back up database
+0. Exit
+
+Choose an option: 0
+Bye!
+
+Inventory-Management-System % 
+docker run -it --rm \
+  -e INVENTORY_DB=/data/inventory.db \
+  -v inventory-data:/data \
+  inventory:1.0.0
+
+
+1. Search products
+2. Look up a product
+3. Add a product
+4. Restock
+5. Record a sale
+6. Report: stock value by supplier
+7. Report: low stock
+8. Report: sales by product
+9. Report: never sold
+10. Back up database
+0. Exit
+
+Choose an option: 2
+Product id: 1
+HEX-M8 — Hex Bolt M8x40 (box) (Cedar Valley Metals)
+  category: Fasteners
+  price: $4.50
+  qty: 74 (reorder at 15)
+
+1. Search products
+2. Look up a product
+3. Add a product
+4. Restock
+5. Record a sale
+6. Report: stock value by supplier
+7. Report: low stock
+8. Report: sales by product
+9. Report: never sold
+10. Back up database
+0. Exit
+
+Choose an option: 0
+Bye!                             
+```
+
+## Version Table
+| Version | Git tag | Docker tag | 
+|---|---|---|
+| 1.0.0 | `v1.0.0` | `inventory:1.0.0` |
+| 1.1.0 | `v1.1.0` | `inventory:1.1.0` |
+
+
+## How to run
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python3 seed_db.py
+python3 main.py
+```
+## How to run the tests
+```bash
+ruff check .
+pytest -q
+```
+
+## How to deploy with Docker
+
+Build the image:
+
+```bash
+docker build -t inventory:1.0.0 .
+docker build -t inventory:1.1.0 .
+
+docker run --rm \
+  -e INVENTORY_DB=/data/inventory.db \
+  -v inventory-data:/data \
+  inventory:1.0.0 \
+  python seed_db.py
+
+docker run -it --rm \
+  -e INVENTORY_DB=/data/inventory.db \
+  -v inventory-data:/data \
+  inventory:1.0.0
+```
+
+## How to back up and restore
+Run the menu and choose option 10.
+```bash
+python3 main.py
+# Choose an option: 10
+# Backup file path: inventory-backup-2026-11-01.db
+
+cp inventory-backup-2026-11-01.db inventory.db
+```
+## How to rollback
+Rollback means running the older **image** on the **same volume**. The database stays, only the application code changes (the changes in 1.1.0 goes away).
+
+```bash
+docker build -t inventory:1.1.0 .
+docker run -it --rm \
+  -e INVENTORY_DB=/data/inventory.db \
+  -v inventory-data:/data \
+  inventory:1.1.0
+
+
+docker run -it --rm \
+  -e INVENTORY_DB=/data/inventory.db \
+  -v inventory-data:/data \
+  inventory:1.0.0
+```
+
+## Self-review
+
+If I rebuilt this from scratch, I would expose adjust-stock on the menu. The function already exists and is tested, but the terminal only offers restock. That means a damage write off or a recount has no path in the UI even though the database rules for adjustments are already there. Putting adjust next to restock would make the menu match what the library can do.
+
+I would also spend more time on the sale flow before writing code. Getting “all lines save or nothing does” right took more trial and error than I expected, and a clearer step list up front would have helped.
+
+One thing I'd want a reviewer to double-check is the search filters in `search_products`. Combining category, max price, in stock, and low stock with the LIKE text felt easy to get subtly wrong. The tests cover the cases I thought of, but I'd still like someone else to skim that SQL before I explain it live.
